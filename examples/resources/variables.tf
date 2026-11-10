@@ -13,3 +13,8 @@ variable "aeza_base_url" {
   type        = string
   default     = "https://my.aeza.net/api"
 }
+
+variable "product_name" {
+  description = "Exact Aeza product name shown in the control panel"
+  type        = string
+}

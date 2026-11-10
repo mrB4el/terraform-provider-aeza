@@ -67,6 +67,10 @@ The API key can be provided in several ways:
 
 ## Resources
 
+### Product names
+
+`aeza_service` can select a product by its human-readable `product_name`. See the generated [Aeza product-name catalog](product-catalog.md) for current values. A scheduled workflow checks the Aeza API daily and proposes catalog changes through a bot-authored pull request.
+
 - [aeza_service](resources/service.md) - Manage Aeza services (VPS, dedicated servers, etc.)
 - [aeza_service_actions](resources/service_actions.md) - Perform actions on services (start, stop, reboot, etc.)
 - [aeza_service_prolong](resources/service_prolong.md) - Extend service subscription period
@@ -79,4 +83,3 @@ The API key can be provided in several ways:
 - [aeza_service_groups](data-sources/service_groups.md) - Get service groups
 - [aeza_os_list](data-sources/os_list.md) - Get available operating systems
 - [aeza_recipes](data-sources/recipes.md) - Get installation recipes
-

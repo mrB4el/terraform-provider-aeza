@@ -7,6 +7,8 @@ package utils
 
 import (
 	"fmt"
+	"net"
+	"strings"
 	"time"
 
 	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
@@ -15,67 +17,81 @@ import (
 )
 
 func ConvertNextService(nextService next.Service) models.TerraformService {
+	var ipv4Addresses, ipv6Addresses []string
+	if isIPv6Address(nextService.IP) {
+		ipv6Addresses = compactUniqueStrings([]string{nextService.IP})
+	} else {
+		ipv4Addresses = compactUniqueStrings([]string{nextService.IP})
+	}
+
 	return models.TerraformService{
-		ID:           nextService.ID,
-		Name:         nextService.Name,
-		IP:           nextService.IP,
-		Price:        nextService.Price,
-		PaymentTerm:  nextService.PaymentTerm,
-		AutoProlong:  nextService.AutoProlong,
-		CreatedAt:    nextService.CreatedAt,
-		ExpiresAt:    nextService.ExpiresAt,
-		Status:       nextService.Status,
-		TypeSlug:     nextService.TypeSlug,
-		ProductName:  nextService.ProductName,
-		LocationCode: nextService.LocationCode,
+		ID:            nextService.ID,
+		Name:          nextService.Name,
+		IP:            nextService.IP,
+		IPv4Addresses: ipv4Addresses,
+		IPv6Addresses: ipv6Addresses,
+		Price:         nextService.Price,
+		PaymentTerm:   nextService.PaymentTerm,
+		AutoProlong:   nextService.AutoProlong,
+		CreatedAt:     nextService.CreatedAt,
+		ExpiresAt:     nextService.ExpiresAt,
+		Status:        nextService.Status,
+		TypeSlug:      nextService.TypeSlug,
+		ProductName:   nextService.ProductName,
+		LocationCode:  nextService.LocationCode,
 	}
 }
 
 func ConvertLegacyService(legacyService legacy.ServiceVPS) models.TerraformService {
+	ipv4Addresses := extractIPv4Addresses(legacyService.IP, legacyService.IPs)
+	ipv6Addresses := extractIPv6Addresses(legacyService.IP, legacyService.IPv6)
+
 	tfService := models.TerraformService{
-		ID:           legacyService.ID,
-		Name:         legacyService.Name,
-		IP:           legacyService.IP,
-		PaymentTerm:  legacyService.PaymentTerm,
-		AutoProlong:  legacyService.AutoProlong,
-		Status:       legacyService.Status,
-		LocationCode: legacyService.LocationCode,
+		ID:            legacyService.ID,
+		Name:          legacyService.Name,
+		IP:            legacyService.IP,
+		IPv4Addresses: ipv4Addresses,
+		IPv6Addresses: ipv6Addresses,
+		PaymentTerm:   legacyService.PaymentTerm,
+		AutoProlong:   legacyService.AutoProlong,
+		Status:        legacyService.Status,
+		LocationCode:  legacyService.LocationCode,
 	}
 
-		if legacyService.Product.Name != "" {
+	if legacyService.Product.Name != "" {
 		tfService.ProductName = legacyService.Product.Name
 	} else {
 		tfService.ProductName = "Unknown"
 	}
 
-		if legacyService.Product.Type != "" {
+	if legacyService.Product.Type != "" {
 		tfService.TypeSlug = legacyService.Product.Type
 	} else {
 		tfService.TypeSlug = "unknown"
 	}
 
-		tfService.CreatedAt = convertUnixToISO(int64(legacyService.Timestamps.CreatedAt))
+	tfService.CreatedAt = convertUnixToISO(int64(legacyService.Timestamps.CreatedAt))
 	tfService.ExpiresAt = convertUnixToISO(int64(legacyService.Timestamps.ExpiresAt))
 
-		tfService.Price = calculatePriceFromLegacy(legacyService)
+	tfService.Price = calculatePriceFromLegacy(legacyService)
 
 	return tfService
 }
 
 func calculatePriceFromLegacy(legacyService legacy.ServiceVPS) float64 {
-		if legacyService.IndividualPrices != nil {
+	if legacyService.IndividualPrices != nil {
 		if price, exists := legacyService.IndividualPrices[legacyService.PaymentTerm]; exists {
 			return float64(price)
 		}
 	}
 
-		if legacyService.RawPrices != nil {
+	if legacyService.RawPrices != nil {
 		if price, exists := legacyService.RawPrices[legacyService.PaymentTerm]; exists {
 			return float64(price)
 		}
 	}
 
-		if legacyService.Product.Prices.Hour > 0 || legacyService.Product.Prices.Month > 0 {
+	if legacyService.Product.Prices.Hour > 0 || legacyService.Product.Prices.Month > 0 {
 		switch legacyService.PaymentTerm {
 		case "hour":
 			return legacyService.Product.Prices.Hour
@@ -90,7 +106,7 @@ func calculatePriceFromLegacy(legacyService legacy.ServiceVPS) float64 {
 		}
 	}
 
-		if legacyService.Product.RawPrices != (legacy.ProductPrices{}) {
+	if legacyService.Product.RawPrices != (legacy.ProductPrices{}) {
 		switch legacyService.PaymentTerm {
 		case "hour":
 			if legacyService.Product.RawPrices.Hour > 0 {
@@ -115,7 +131,7 @@ func calculatePriceFromLegacy(legacyService legacy.ServiceVPS) float64 {
 		}
 	}
 
-		if legacyService.Product.IndividualPrices != (legacy.ProductPrices{}) {
+	if legacyService.Product.IndividualPrices != (legacy.ProductPrices{}) {
 		switch legacyService.PaymentTerm {
 		case "hour":
 			if legacyService.Product.IndividualPrices.Hour > 0 {
@@ -140,7 +156,7 @@ func calculatePriceFromLegacy(legacyService legacy.ServiceVPS) float64 {
 		}
 	}
 
-		return 0
+	return 0
 }
 
 func ConvertNextServices(nextServices []next.Service) []models.TerraformService {
@@ -161,7 +177,7 @@ func ConvertLegacyServices(legacyServices []legacy.ServiceVPS) []models.Terrafor
 
 func ConvertLegacyVPSToTerraform(vpsService legacy.ServiceVPS) models.TerraformServiceDetailed {
 	tfService := models.TerraformServiceDetailed{
-				ID:           vpsService.ID,
+		ID:           vpsService.ID,
 		Name:         vpsService.Name,
 		Status:       vpsService.Status,
 		LocationCode: vpsService.LocationCode,
@@ -171,28 +187,28 @@ func ConvertLegacyVPSToTerraform(vpsService legacy.ServiceVPS) models.TerraformS
 		Capabilities: vpsService.Capabilities,
 		Payload:      vpsService.Payload,
 
-				IP:   vpsService.IP,
+		IP:   vpsService.IP,
 		IPs:  extractIPs(vpsService.IPs),
 		IPv6: extractIPv6(vpsService.IPv6),
 
-				ProductName: vpsService.Product.Name,
+		ProductName: vpsService.Product.Name,
 		TypeSlug:    getTypeSlug(vpsService.Product),
 
-				OS:       getOSDisplayName(vpsService.Parameters.OS),
+		OS:       getOSDisplayName(vpsService.Parameters.OS),
 		Username: vpsService.Parameters.Username,
 	}
 
-		tfService.Price = getPriceInEuros(vpsService.RawPrices, vpsService.PaymentTerm)
+	tfService.Price = getPriceInEuros(vpsService.RawPrices, vpsService.PaymentTerm)
 	tfService.PriceDisplay = formatPriceDisplay(tfService.Price, vpsService.PaymentTerm)
 
-		if vpsService.SummaryConfiguration != nil {
+	if vpsService.SummaryConfiguration != nil {
 		tfService.CPU = getCPUCount(vpsService.SummaryConfiguration["cpu"])
 		tfService.RAM = getRAMCount(vpsService.SummaryConfiguration["ram"])
 		tfService.Storage = getStorageCount(vpsService.SummaryConfiguration["rom"])
 		tfService.IPCount = getIPCount(vpsService.SummaryConfiguration["ip"])
 	}
 
-		tfService.CreatedAt = convertUnixToISO(int64(vpsService.Timestamps.CreatedAt))
+	tfService.CreatedAt = convertUnixToISO(int64(vpsService.Timestamps.CreatedAt))
 	tfService.ExpiresAt = convertUnixToISO(int64(vpsService.Timestamps.ExpiresAt))
 	tfService.CreatedDate = formatDisplayDate(int64(vpsService.Timestamps.CreatedAt))
 	tfService.ExpiresDate = formatDisplayDate(int64(vpsService.Timestamps.ExpiresAt))
@@ -202,7 +218,7 @@ func ConvertLegacyVPSToTerraform(vpsService legacy.ServiceVPS) models.TerraformS
 
 func ConvertNextToTerraform(nextService next.Service) models.TerraformServiceDetailed {
 	return models.TerraformServiceDetailed{
-				ID:           nextService.ID,
+		ID:           nextService.ID,
 		Name:         nextService.Name,
 		Status:       nextService.Status,
 		LocationCode: nextService.LocationCode,
@@ -211,20 +227,19 @@ func ConvertNextToTerraform(nextService next.Service) models.TerraformServiceDet
 		Capabilities: nextService.Capabilities,
 		Payload:      nextService.Payload,
 
-				IP: nextService.IP,
+		IP: nextService.IP,
 
-				ProductName: nextService.ProductName,
+		ProductName: nextService.ProductName,
 		TypeSlug:    nextService.TypeSlug,
 
-				Price:        float64(nextService.Price) / 100, 		PriceDisplay: formatPriceDisplay(float64(nextService.Price)/100, nextService.PaymentTerm),
+		Price: float64(nextService.Price) / 100, PriceDisplay: formatPriceDisplay(float64(nextService.Price)/100, nextService.PaymentTerm),
 
-				CreatedAt:   nextService.CreatedAt,
+		CreatedAt:   nextService.CreatedAt,
 		ExpiresAt:   nextService.ExpiresAt,
 		CreatedDate: formatISOToDisplayDate(nextService.CreatedAt),
 		ExpiresDate: formatISOToDisplayDate(nextService.ExpiresAt),
 	}
 }
-
 
 func getPriceInEuros(rawPrices map[string]int, paymentTerm string) float64 {
 	if rawPrices == nil {
@@ -233,7 +248,8 @@ func getPriceInEuros(rawPrices map[string]int, paymentTerm string) float64 {
 
 	priceCents := rawPrices[paymentTerm]
 	if priceCents == 0 && paymentTerm != "month" {
-		priceCents = rawPrices["month"] 	}
+		priceCents = rawPrices["month"]
+	}
 
 	return float64(priceCents) / 100
 }
@@ -259,6 +275,72 @@ func extractIPs(ips []legacy.IPAddress) []string {
 	var result []string
 	for _, ip := range ips {
 		result = append(result, ip.Value)
+	}
+	return result
+}
+
+func extractIPv4Addresses(primary string, ips []legacy.IPAddress) []string {
+	var values []string
+	if !isIPv6Address(primary) {
+		values = append(values, primary)
+	}
+	for _, ip := range ips {
+		values = append(values, ip.Value)
+	}
+	return compactUniqueStrings(values)
+}
+
+func isIPv6Address(value string) bool {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return false
+	}
+	if parsed := net.ParseIP(value); parsed != nil {
+		return parsed.To4() == nil
+	}
+	if parsed, _, err := net.ParseCIDR(value); err == nil {
+		return parsed.To4() == nil
+	}
+	return strings.Contains(value, ":")
+}
+
+func extractIPv6Addresses(primary string, ipv6 []legacy.IPv6Address) []string {
+	var values []string
+	if isIPv6Address(primary) {
+		values = append(values, primary)
+	}
+	for _, subnet := range ipv6 {
+		values = append(values, subnet.Value)
+		for _, raw := range subnet.IPs {
+			switch value := raw.(type) {
+			case string:
+				values = append(values, value)
+			case map[string]interface{}:
+				for _, key := range []string{"value", "address", "ip"} {
+					if address, ok := value[key].(string); ok {
+						values = append(values, address)
+						break
+					}
+				}
+			}
+		}
+	}
+	return compactUniqueStrings(values)
+}
+
+func compactUniqueStrings(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
+		if _, exists := seen[value]; exists {
+			continue
+		}
+		seen[value] = struct{}{}
+		result = append(result, value)
 	}
 	return result
 }

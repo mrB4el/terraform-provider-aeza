@@ -11,20 +11,23 @@ import (
 )
 
 func ConvertLegacyServiceGetToTerraform(legacyService legacy.ServiceGet) models.Service {
+	ipv4Addresses := extractIPv4Addresses(legacyService.IP, legacyService.IPs)
+	ipv6Addresses := extractIPv6Addresses(legacyService.IP, legacyService.IPv6)
+
 	ip := legacyService.IP
-	if ip == "" && len(legacyService.IPs) > 0 {
-		ip = legacyService.IPs[0].Value
+	if ip == "" && len(ipv4Addresses) > 0 {
+		ip = ipv4Addresses[0]
 	}
 
-		parameters := make(map[string]interface{})
+	parameters := make(map[string]interface{})
 
-		parameters["os"] = legacyService.Parameters.OS
+	parameters["os"] = legacyService.Parameters.OS
 	parameters["isoUrl"] = legacyService.Parameters.ISOURL
 	if legacyService.Parameters.Recipe != nil {
 		parameters["recipe"] = *legacyService.Parameters.Recipe
 	}
 
-		// if legacyService.Product.Type == "kubernetes" {
+	// if legacyService.Product.Type == "kubernetes" {
 	//     parameters["kubernetes_version"] = legacyService.KubernetesVersion
 	// }
 
@@ -38,8 +41,11 @@ func ConvertLegacyServiceGetToTerraform(legacyService legacy.ServiceGet) models.
 		ProductID:     int64(legacyService.ProductID),
 		Name:          legacyService.Name,
 		IP:            ip,
+		IPv4Addresses: ipv4Addresses,
+		IPv6Addresses: ipv6Addresses,
 		PaymentTerm:   legacyService.PaymentTerm,
-		Parameters:    parameters, 		AutoProlong:   legacyService.AutoProlong,
+		Parameters:    parameters,
+		AutoProlong:   legacyService.AutoProlong,
 		Backups:       legacyService.Backups,
 		Status:        legacyService.Status,
 		LastStatus:    stringToEmpty(legacyService.LastStatus),

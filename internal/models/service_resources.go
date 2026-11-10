@@ -11,6 +11,8 @@ type Service struct {
 	ProductID        int64                  `json:"productId"`
 	Name             string                 `json:"name"`
 	IP               string                 `json:"ip"`
+	IPv4Addresses    []string               `json:"ipv4_addresses,omitempty"`
+	IPv6Addresses    []string               `json:"ipv6_addresses,omitempty"`
 	PaymentTerm      string                 `json:"paymentTerm"`
 	Parameters       map[string]interface{} `json:"parameters"`
 	SecureParameters map[string]interface{} `json:"secureParameters"`
@@ -49,14 +51,14 @@ type ServiceCreateResponse struct {
 	Status  string `json:"status"`
 	Date    string `json:"date"`
 
-		ProductId   int64  `json:"product_id"`
+	ProductId   int64  `json:"product_id"`
 	ProductType string `json:"product_type"`
 	GroupId     *int64 `json:"group_id"`
 	ProductName string `json:"product_name"`
 
-		LocationName string `json:"location_name"`
+	LocationName string `json:"location_name"`
 
-		Term              string `json:"term"`
+	Term              string `json:"term"`
 	Price             string `json:"price"`
 	TransactionAmount string `json:"transaction_amount"`
 }

@@ -28,7 +28,7 @@ func ServicesDataSource() *schema.Resource {
 				Computed: true,
 				Elem: &schema.Resource{
 					Schema: map[string]*schema.Schema{
-												"id": {
+						"id": {
 							Type:        schema.TypeInt,
 							Computed:    true,
 							Description: "Unique identifier of the service",
@@ -47,6 +47,18 @@ func ServicesDataSource() *schema.Resource {
 							Type:        schema.TypeString,
 							Computed:    true,
 							Description: "Primary IP address of the service",
+						},
+						"ipv4_addresses": {
+							Type:        schema.TypeSet,
+							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "All IPv4 addresses assigned to the service",
+						},
+						"ipv6_addresses": {
+							Type:        schema.TypeSet,
+							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "All IPv6 addresses assigned to the service",
 						},
 						"price_raw": {
 							Type:        schema.TypeInt,
@@ -103,12 +115,12 @@ func ServicesDataSource() *schema.Resource {
 func servicesRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(interfaces.DataClient)
 
-		services, err := client.ListServices(ctx)
+	services, err := client.ListServices(ctx)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error fetching services: %w", err))
 	}
 
-		if err := flattenTerraformServices(d, services); err != nil {
+	if err := flattenTerraformServices(d, services); err != nil {
 		return diag.FromErr(err)
 	}
 
@@ -121,17 +133,21 @@ func flattenTerraformServices(d *schema.ResourceData, services []models.Terrafor
 
 	for i, service := range services {
 		serviceList[i] = map[string]interface{}{
-						"id":            service.ID,
-			"type_slug":     service.TypeSlug,
-			"name":          service.Name,
-			"ip":            service.IP,
-			"price_raw":     service.Price,                    			"price_display": utils.FormatPrice(service.Price), 			"payment_term":  service.PaymentTerm,
-			"auto_prolong":  service.AutoProlong,
-			"created_at":    utils.FormatDate(service.CreatedAt),
-			"expires_at":    utils.FormatDate(service.ExpiresAt),
-			"product_name":  service.ProductName,
-			"location_code": service.LocationCode,
-			"status":        service.Status,
+			"id":             service.ID,
+			"type_slug":      service.TypeSlug,
+			"name":           service.Name,
+			"ip":             service.IP,
+			"ipv4_addresses": service.IPv4Addresses,
+			"ipv6_addresses": service.IPv6Addresses,
+			"price_raw":      service.Price,
+			"price_display":  utils.FormatPrice(service.Price),
+			"payment_term":   service.PaymentTerm,
+			"auto_prolong":   service.AutoProlong,
+			"created_at":     utils.FormatDate(service.CreatedAt),
+			"expires_at":     utils.FormatDate(service.ExpiresAt),
+			"product_name":   service.ProductName,
+			"location_code":  service.LocationCode,
+			"status":         service.Status,
 		}
 	}
 

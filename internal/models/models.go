@@ -10,18 +10,20 @@ import (
 )
 
 type TerraformService struct {
-	ID           int     `json:"id"`
-	Name         string  `json:"name"`
-	IP           string  `json:"ip"`
-	Price        float64 `json:"price"`
-	PaymentTerm  string  `json:"paymentTerm"`
-	AutoProlong  bool    `json:"autoProlong"`
-	CreatedAt    string  `json:"createdAt"`
-	ExpiresAt    string  `json:"expiresAt"`
-	Status       string  `json:"status"`
-	TypeSlug     string  `json:"typeSlug"`
-	ProductName  string  `json:"productName"`
-	LocationCode string  `json:"locationCode"`
+	ID            int      `json:"id"`
+	Name          string   `json:"name"`
+	IP            string   `json:"ip"`
+	IPv4Addresses []string `json:"ipv4_addresses,omitempty"`
+	IPv6Addresses []string `json:"ipv6_addresses,omitempty"`
+	Price         float64  `json:"price"`
+	PaymentTerm   string   `json:"paymentTerm"`
+	AutoProlong   bool     `json:"autoProlong"`
+	CreatedAt     string   `json:"createdAt"`
+	ExpiresAt     string   `json:"expiresAt"`
+	Status        string   `json:"status"`
+	TypeSlug      string   `json:"typeSlug"`
+	ProductName   string   `json:"productName"`
+	LocationCode  string   `json:"locationCode"`
 }
 
 type TerraformServiceDetailed struct {

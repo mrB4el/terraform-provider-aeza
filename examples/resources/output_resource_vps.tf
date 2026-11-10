@@ -7,6 +7,8 @@ output "service_info" {
     product_name       = aeza_service.test_vps.product_name
     status             = aeza_service.test_vps.status
     ip                 = aeza_service.test_vps.ip
+    ipv4_addresses     = tolist(aeza_service.test_vps.ipv4_addresses)
+    ipv6_addresses     = tolist(aeza_service.test_vps.ipv6_addresses)
     price              = aeza_service.test_vps.price
     term               = aeza_service.test_vps.payment_term
     transaction_amount = aeza_service.test_vps.transaction_amount

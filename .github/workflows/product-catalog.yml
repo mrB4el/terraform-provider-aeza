@@ -1,0 +1,68 @@
+name: Update Aeza product catalog
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: aeza-product-catalog
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Generate current catalog
+        env:
+          AEZA_API_KEY: ${{ secrets.AEZA_API_KEY }}
+          AEZA_BASE_URL: ${{ secrets.AEZA_BASE_URL }}
+        run: |
+          if [ -z "$AEZA_API_KEY" ]; then
+            echo "AEZA_API_KEY repository secret is required"
+            exit 1
+          fi
+          go run ./cmd/product-catalog --output docs/product-catalog.md
+
+      - name: Open or update catalog pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- docs/product-catalog.md; then
+            echo "Aeza product catalog has not changed"
+            exit 0
+          fi
+
+          branch="automation/aeza-product-catalog"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$branch:refs/remotes/origin/$branch" || true
+          git switch -C "$branch"
+          git add docs/product-catalog.md
+          git commit -m "docs: update Aeza product catalog"
+          git push --force-with-lease origin "$branch"
+
+          open_prs="$(gh pr list --head "$branch" --state open --json number --jq 'length')"
+          if [ "$open_prs" = "0" ]; then
+            gh pr create \
+              --base "${{ github.event.repository.default_branch }}" \
+              --head "$branch" \
+              --title "docs: update Aeza product catalog" \
+              --body "Automated catalog refresh from the Aeza API. Review added, removed, or renamed product configurations before merging."
+          fi

@@ -35,4 +35,4 @@ output "active_services" {
 
 - `id` (String) The ID of this data source.
 - `services` (List of Object) List of services with their configurations and status.
-
+  Each service includes the primary `ip`, all `ipv4_addresses`, and all `ipv6_addresses` returned by Aeza.
