@@ -81,6 +81,8 @@ export AEZA_BASE_URL="https://my.aeza.net/api"  # Optional
 - `aeza_service_prolong` - Extend service subscription
 - `aeza_service_actions` - Manage service actions (start, stop, reboot)
 
+`aeza_service` accepts a human-readable `product_name`; the provider resolves the corresponding API ID during creation. Current names are maintained in [`docs/product-catalog.md`](docs/product-catalog.md) by a scheduled API catalog check.
+
 ## Example Usage
 
 See the [examples](./examples) directory for complete usage examples:
@@ -94,11 +96,26 @@ See the [examples](./examples) directory for complete usage examples:
 ```hcl
 data "aeza_products" "available" {}
 
+output "available_product_names" {
+  value = sort(distinct([
+    for product in data.aeza_products.available.products : product.name
+    if product.type == "vps"
+  ]))
+}
+
 resource "aeza_service" "my_vps" {
-  product_id = 123
-  os_id      = 456
-  period     = "month"
-  count      = 1
+  name         = "my-vps"
+  product_name = "<name from available_product_names>"
+  os           = "ubuntu_2404"
+  payment_term = "month"
+  wait_for_ip  = true
+}
+
+output "my_vps_addresses" {
+  value = {
+    ipv4 = tolist(aeza_service.my_vps.ipv4_addresses)
+    ipv6 = tolist(aeza_service.my_vps.ipv6_addresses)
+  }
 }
 ```
 
