@@ -22,6 +22,33 @@ func (c *Client) ListServices_V2(ctx context.Context) ([]next.Service, error) {
 	return response.Items, nil
 }
 
+func (c *Client) ListServiceIPv6Addresses(ctx context.Context, serviceID int64) ([]string, error) {
+	var response struct {
+		Items []struct {
+			IPs []string `json:"ips"`
+		} `json:"items"`
+	}
+	path := fmt.Sprintf("/v2/services/%d/networks/ipv6", serviceID)
+	if err := c.NewRequest("GET", path, nil).Do(ctx, &response); err != nil {
+		return nil, fmt.Errorf("failed to get IPv6 addresses for service %d: %w", serviceID, err)
+	}
+
+	addresses := make([]string, 0)
+	seen := make(map[string]struct{})
+	for _, network := range response.Items {
+		for _, address := range network.IPs {
+			if address == "" {
+				continue
+			}
+			if _, exists := seen[address]; !exists {
+				seen[address] = struct{}{}
+				addresses = append(addresses, address)
+			}
+		}
+	}
+	return addresses, nil
+}
+
 func (c *Client) ListServiceGroups_V2(ctx context.Context, serviceType string) ([]next.ServiceGroup, error) {
 	var response next.ServiceGroupsResponse
 

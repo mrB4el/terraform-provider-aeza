@@ -139,6 +139,12 @@ func (c *Client) GetService(ctx context.Context, id int64) (*models.Service, err
 	legacyService := legacyResp.Data.Items[0]
 	terraformService := utils.ConvertLegacyServiceGetToTerraform(legacyService)
 
+	ipv6Addresses, err := c.ListServiceIPv6Addresses(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	terraformService.IPv6Addresses = ipv6Addresses
+
 	return &terraformService, nil
 }
 

@@ -79,7 +79,7 @@ resource "aeza_service" "app_server" {
 - `os` (String) Operating-system slug, such as `ubuntu_2404`.
 - `recipe` (String) Installation recipe slug.
 - `iso_url` (String) Custom installation ISO URL.
-- `wait_for_ip` (Boolean) Wait up to the resource create timeout for at least one IPv4 or IPv6 address. Defaults to `true`.
+- `wait_for_ip` (Boolean) Wait up to the resource create timeout for at least one IPv4 or IPv6 address. It does not wait specifically for IPv6. Defaults to `true`.
 
 ### Read-Only
 
@@ -87,7 +87,7 @@ resource "aeza_service" "app_server" {
 - `status` (String) Current status of the service.
 - `ip` (String) Primary IP address, kept for backward compatibility.
 - `ipv4_addresses` (Set of String) All IPv4 addresses assigned to the service.
-- `ipv6_addresses` (Set of String) All IPv6 addresses assigned to the service.
+- `ipv6_addresses` (Set of String) IPv6 addresses returned in `items[].ips` by the Aeza v2 service networks API. Addresses provisioned later appear on the next refresh.
 - `created_at` (String) Service creation timestamp.
 
 `product_name` and the resolved `product_id` are both retained in state, so downstream modules can use either value.
