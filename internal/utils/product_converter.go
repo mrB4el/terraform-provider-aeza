@@ -6,8 +6,8 @@
 package utils
 
 import (
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/legacy"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/legacy"
 )
 
 func ConvertLegacyProduct(legacyProduct legacy.Product) models.Product {

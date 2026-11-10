@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/catalog"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/client"
+	"github.com/mrb4el/terraform-provider-aeza/internal/catalog"
+	"github.com/mrb4el/terraform-provider-aeza/internal/client"
 )
 
 func main() {

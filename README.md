@@ -145,10 +145,11 @@ This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE
 
 ## Organization
 
-Maintained by [SCINFRA](https://github.com/scinfra-pro)
+Maintained by [mrB4el](https://github.com/mrB4el)
 
 ## Acknowledgments
 
 - Thanks to [SCINFRA](https://github.com/scinfra-pro) for the original development.
 - Thanks to [supercakecrumb](https://github.com/supercakecrumb) for major improvements.
+- Thanks to [GitHub Copilot](https://github.com/features/copilot) for AI-assisted development.
 

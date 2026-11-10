@@ -8,18 +8,17 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
+	"time"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/utils"
+	"github.com/mrb4el/terraform-provider-aeza/internal/interfaces"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/utils"
 )
 
 func (c *Client) ListServices(ctx context.Context) ([]models.TerraformService, error) {
-	legacyServices, err := c.ListServicesVPS_legacy(ctx)
-	if err == nil && len(legacyServices) > 0 {
-		return utils.ConvertLegacyServices(legacyServices), nil
-	}
-
 	nextServices, err := c.ListServices_V2(ctx)
 	if err != nil {
 		return nil, err
@@ -29,26 +28,24 @@ func (c *Client) ListServices(ctx context.Context) ([]models.TerraformService, e
 }
 
 func (c *Client) ListServiceTypes(ctx context.Context) ([]models.ServiceType, error) {
-
-	legacyTypes, err := c.ListServiceTypes_legacy(ctx)
+	nextTypes, err := c.ListServiceTypes_V2(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []models.ServiceType
-	for _, legacyType := range legacyTypes {
-		result = append(result, utils.ConvertLegacyServiceType(legacyType))
+	for _, serviceType := range nextTypes {
+		result = append(result, models.ServiceType{
+			Slug:    serviceType.Slug,
+			Name:    serviceType.Name,
+			Payload: serviceType.Payload,
+		})
 	}
 
 	return result, nil
 }
 
 func (c *Client) ListServiceGroups(ctx context.Context, serviceType string) ([]models.ServiceGroup, error) {
-	legacyGroups, err := c.ListServiceGroups_Legacy(ctx, serviceType)
-	if err == nil && len(legacyGroups) > 0 {
-		return utils.ConvertLegacyServiceGroups(legacyGroups), nil
-	}
-
 	nextGroups, err := c.ListServiceGroups_V2(ctx, serviceType)
 	if err != nil {
 		return nil, err
@@ -58,54 +55,56 @@ func (c *Client) ListServiceGroups(ctx context.Context, serviceType string) ([]m
 }
 
 func (c *Client) ListProducts(ctx context.Context) ([]models.Product, error) {
-	legacyProducts, err := c.ListProducts_Legacy(ctx)
+	products, err := c.ListProducts_V2(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	var result []models.Product
-	for _, legacyProduct := range legacyProducts {
-		result = append(result, utils.ConvertLegacyProduct(legacyProduct))
+	serviceTypes, err := c.ListServiceTypes_V2(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	return result, nil
+	handlersByType := make(map[string]string, len(serviceTypes))
+	for _, serviceType := range serviceTypes {
+		handlersByType[serviceType.Slug] = serviceType.ServiceHandler
+	}
+	for index := range products {
+		products[index].ServiceHandler = handlersByType[products[index].Type]
+	}
+	return products, nil
 }
 
 func (c *Client) ListOS(ctx context.Context) ([]models.OperatingSystem, error) {
 	nextOS, err := c.ListOS_V2(ctx)
-	if err == nil && len(nextOS) > 0 {
-		var result []models.OperatingSystem
-		for _, os := range nextOS {
-			result = append(result, models.OperatingSystem{OperatingSystem: os})
-		}
-		return result, nil
-	}
-
-	legacyOS, err := c.ListOS_Legacy(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	var result []models.OperatingSystem
-	for _, os := range legacyOS {
-		result = append(result, models.OperatingSystem{OperatingSystem: utils.ConvertOsFromLegacy(os)})
+	for _, os := range nextOS {
+		result = append(result, models.OperatingSystem{OperatingSystem: os})
 	}
 
 	return result, nil
 }
 
 func (c *Client) ListRecipes(ctx context.Context) ([]models.Recipe, error) {
-	legacyRecipes, err := c.ListRecipes_Legacy(ctx)
+	recipes, err := c.ListRecipes_V2(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var result []models.Recipe
-	for _, legacyRecipe := range legacyRecipes {
-		result = append(result, utils.ConvertRecipeFromLegacy(legacyRecipe))
+	operatingSystems, err := c.ListOS_V2(ctx)
+	if err != nil {
+		return nil, err
 	}
-
-	return result, nil
+	idsBySlug := make(map[string]int, len(operatingSystems))
+	for _, operatingSystem := range operatingSystems {
+		idsBySlug[operatingSystem.Slug] = operatingSystem.ID
+	}
+	for index := range recipes {
+		recipes[index].OS = idsBySlug[recipes[index].OperatingSystem]
+	}
+	return recipes, nil
 }
 
 func (c *Client) CreateService(ctx context.Context, req models.ServiceCreateRequest) (*models.ServiceCreateResponse, error) {
@@ -122,22 +121,83 @@ func (c *Client) CreateService(ctx context.Context, req models.ServiceCreateRequ
 }
 
 func (c *Client) DeleteService(ctx context.Context, id int64) error {
-	return c.DeleteService_legacy(ctx, id)
+	path := fmt.Sprintf("/v2/services/%d", id)
+	if err := c.NewRequest("DELETE", path, nil).Do(ctx, nil); err != nil {
+		var apiError *APIError
+		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
+			return nil
+		}
+		return fmt.Errorf("failed to request deletion of service %d: %w", id, err)
+	}
+
+	ticker := time.NewTicker(5 * time.Second)
+	defer ticker.Stop()
+	for {
+		var response struct {
+			Status string `json:"status"`
+		}
+		if err := c.NewRequest("GET", path, nil).Do(ctx, &response); err != nil {
+			var apiError *APIError
+			if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
+				return nil
+			}
+			return fmt.Errorf("failed to check deletion of service %d: %w", id, err)
+		}
+		if response.Status == "deleted" {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("waiting for deletion of service %d: %w", id, ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }
 
 func (c *Client) GetService(ctx context.Context, id int64) (*models.Service, error) {
-
-		legacyResp, err := c.GetService_legacy(ctx, id)
-	if err != nil {
+	var response struct {
+		ID               int64                  `json:"id"`
+		OwnerID          int64                  `json:"ownerId"`
+		ProductID        int64                  `json:"productId"`
+		Name             string                 `json:"name"`
+		IP               string                 `json:"ip"`
+		PaymentTerm      string                 `json:"paymentTerm"`
+		Parameters       map[string]interface{} `json:"parameters"`
+		SecureParameters map[string]interface{} `json:"secureParameters"`
+		AutoProlong      bool                   `json:"autoProlong"`
+		Backups          bool                   `json:"backups"`
+		Status           string                 `json:"status"`
+		LocationCode     string                 `json:"locationCode"`
+		CreatedAt        string                 `json:"createdAt"`
+		ExpiresAt        string                 `json:"expiresAt"`
+		Product          struct {
+			ID       int64  `json:"id"`
+			Name     string `json:"name"`
+			TypeSlug string `json:"typeSlug"`
+			GroupID  int64  `json:"groupId"`
+		} `json:"product"`
+	}
+	path := fmt.Sprintf("/v2/services/%d", id)
+	if err := c.NewRequest("GET", path, nil).Do(ctx, &response); err != nil {
+		var apiError *APIError
+		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
+			return nil, fmt.Errorf("%w: %d", interfaces.ErrServiceNotFound, id)
+		}
 		return nil, fmt.Errorf("failed to get service: %w", err)
 	}
-
-		if len(legacyResp.Data.Items) == 0 {
-		return nil, fmt.Errorf("service with ID %d not found", id)
+	terraformService := models.Service{
+		ID: response.ID, OwnerID: response.OwnerID, ProductID: response.ProductID,
+		Name: response.Name, IP: response.IP, PaymentTerm: response.PaymentTerm,
+		Parameters: response.Parameters, SecureParameters: response.SecureParameters,
+		AutoProlong: response.AutoProlong, Backups: response.Backups, Status: response.Status,
+		LocationCode: response.LocationCode, CreatedAt: response.CreatedAt, ExpiresAt: response.ExpiresAt,
+		Product: models.Product{ID: response.Product.ID, Name: response.Product.Name, Type: response.Product.TypeSlug, GroupID: response.Product.GroupID},
 	}
-
-	legacyService := legacyResp.Data.Items[0]
-	terraformService := utils.ConvertLegacyServiceGetToTerraform(legacyService)
+	ipv4Addresses, err := c.ListServiceIPv4Addresses(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	terraformService.IPv4Addresses = ipv4Addresses
 
 	ipv6Addresses, err := c.ListServiceIPv6Addresses(ctx, id)
 	if err != nil {
@@ -149,8 +209,12 @@ func (c *Client) GetService(ctx context.Context, id int64) (*models.Service, err
 }
 
 func (c *Client) UpdateService(ctx context.Context, id int64, req models.ServiceUpdateRequest) error {
-	legacyReq := utils.ConvertToLegacy_ServiceUpdateRequest(req)
-	return c.UpdateService_legacy(ctx, id, legacyReq)
+	body := struct {
+		Name        *string `json:"name,omitempty"`
+		AutoProlong *bool   `json:"autoProlong,omitempty"`
+	}{Name: req.Name, AutoProlong: req.AutoProlong}
+	path := fmt.Sprintf("/v2/services/%d", id)
+	return c.NewRequest("PATCH", path, body).Do(ctx, nil)
 }
 
 func (c *Client) ProlongService(ctx context.Context, serviceID int64, req models.ServiceProlongRequest) (*models.ServiceProlongResponse, error) {

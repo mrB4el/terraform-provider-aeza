@@ -9,7 +9,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/legacy"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/legacy"
 )
 
 func (c *Client) ListServicesBase_legacy(ctx context.Context, serviceID ...int) ([]legacy.ServiceBase, error) {

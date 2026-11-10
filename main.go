@@ -8,7 +8,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/plugin"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/provider"
+	"github.com/mrb4el/terraform-provider-aeza/internal/provider"
 )
 
 func main() {

@@ -7,6 +7,7 @@ package resources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -15,8 +16,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/interfaces"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/interfaces"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
 
 func ServiceResource() *schema.Resource {
@@ -33,6 +34,7 @@ func ServiceResource() *schema.Resource {
 		},
 		Timeouts: &schema.ResourceTimeout{
 			Create: schema.DefaultTimeout(10 * time.Minute),
+			Delete: schema.DefaultTimeout(10 * time.Minute),
 		},
 
 		Schema: map[string]*schema.Schema{
@@ -288,7 +290,7 @@ func serviceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) 
 
 	service, err := client.GetService(ctx, id)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if errors.Is(err, interfaces.ErrServiceNotFound) {
 			d.SetId("")
 			return nil
 		}
@@ -433,7 +435,9 @@ func serviceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}
 		return diag.FromErr(err)
 	}
 
-	err = client.DeleteService(ctx, id)
+	deleteContext, cancel := context.WithTimeout(ctx, d.Timeout(schema.TimeoutDelete))
+	defer cancel()
+	err = client.DeleteService(deleteContext, id)
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("error deleting service: %w", err))
 	}

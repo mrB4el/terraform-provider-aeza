@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
 
 func TestRenderProductsMarkdownIsDeterministicAndMarksAmbiguousNames(t *testing.T) {

@@ -1,4 +1,4 @@
-module github.com/scinfra-pro/terraform-provider-aeza
+module github.com/mrb4el/terraform-provider-aeza
 
 go 1.21
 

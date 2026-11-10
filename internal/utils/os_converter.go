@@ -6,8 +6,8 @@
 package utils
 
 import (
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/legacy"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/next"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/legacy"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/next"
 )
 
 func ConvertOsFromLegacy(legacy legacy.OperatingSystem) next.OperatingSystem {

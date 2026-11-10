@@ -91,7 +91,7 @@ func (r *Request) Do(ctx context.Context, result interface{}) error {
 	r.client.logResponse(req.Method, fullURL, resp.Status, responseBody, resp.Header, duration)
 
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("API error %d", resp.StatusCode)
+		return &APIError{StatusCode: resp.StatusCode}
 	}
 
 	if result != nil {

@@ -92,6 +92,8 @@ resource "aeza_service" "app_server" {
 
 `product_name` and the resolved `product_id` are both retained in state, so downstream modules can use either value.
 
+Deletion requests are asynchronous. The provider waits until Aeza reports the service as deleted or no longer found, up to the resource delete timeout (10 minutes by default).
+
 ## Keeping product names current
 
 Product names are owned by Aeza and are not hardcoded in the provider. The repository includes `cmd/product-catalog`, which reads the current catalog from the Aeza API and deterministically updates `docs/product-catalog.md`:

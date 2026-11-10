@@ -14,6 +14,9 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
+	if e.Message == "" && e.Slug == "" {
+		return fmt.Sprintf("API error %d", e.StatusCode)
+	}
 	return fmt.Sprintf("API Error %d: %s (%s)", e.StatusCode, e.Message, e.Slug)
 }
 

@@ -26,3 +26,5 @@ output "service_types" {
 - `id` (String) The ID of this data source.
 - `types` (List of Object) List of available service types.
 
+The v2 API does not provide an `order` field for service types; its value is `0`.
+

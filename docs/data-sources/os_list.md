@@ -26,3 +26,5 @@ output "operating_systems" {
 - `id` (String) The ID of this data source.
 - `operating_systems` (List of Object) List of available operating systems.
 
+The legacy `repository` and `targets` fields are empty when absent from the v2 response.
+

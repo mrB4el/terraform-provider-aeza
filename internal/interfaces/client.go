@@ -7,9 +7,12 @@ package interfaces
 
 import (
 	"context"
+	"errors"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
+
+var ErrServiceNotFound = errors.New("service not found")
 
 type DataClient interface {
 	ListServices(ctx context.Context) ([]models.TerraformService, error)

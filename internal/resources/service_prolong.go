@@ -12,8 +12,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/interfaces"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/interfaces"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
 
 func ServiceProlongResource() *schema.Resource {

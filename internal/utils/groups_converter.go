@@ -8,8 +8,8 @@ package utils
 import (
 	"strings"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/legacy"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/legacy"
 )
 
 func ConvertLegacyServiceGroup(legacyGroup legacy.ServiceGroup) models.ServiceGroup {

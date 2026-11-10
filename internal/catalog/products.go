@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
 
 // RenderProductsMarkdown returns a deterministic product-name catalog. It does

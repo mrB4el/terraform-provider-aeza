@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/models/legacy"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models/legacy"
 )
 
 func TestConvertLegacyServiceGetToTerraformAddresses(t *testing.T) {

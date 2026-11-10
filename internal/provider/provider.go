@@ -11,9 +11,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/client"
-	data_sources "github.com/scinfra-pro/terraform-provider-aeza/internal/data-sources"
-	"github.com/scinfra-pro/terraform-provider-aeza/internal/resources"
+	"github.com/mrb4el/terraform-provider-aeza/internal/client"
+	data_sources "github.com/mrb4el/terraform-provider-aeza/internal/data-sources"
+	"github.com/mrb4el/terraform-provider-aeza/internal/resources"
 )
 
 func New() *schema.Provider {

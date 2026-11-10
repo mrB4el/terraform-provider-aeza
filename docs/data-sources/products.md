@@ -75,5 +75,5 @@ Service handlers determine the service management system:
 
 ### Pricing
 
-Prices are specified in the smallest currency units (kopecks, cents, etc.).
+Prices are the v2 API's `rawPrices`, specified in the smallest currency units (kopecks, cents, etc.).
 
