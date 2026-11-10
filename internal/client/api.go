@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -24,7 +25,24 @@ func (c *Client) ListServices(ctx context.Context) ([]models.TerraformService, e
 		return nil, err
 	}
 
-	return utils.ConvertNextServices(nextServices), nil
+	services := utils.ConvertNextServices(nextServices)
+	for index, nextService := range nextServices {
+		if !hasIPCapability(nextService.Capabilities) {
+			continue
+		}
+		ipv4Addresses, err := c.ListServiceIPv4Addresses(ctx, int64(nextService.ID))
+		if err != nil {
+			return nil, err
+		}
+		ipv6Addresses, ipv6Subnets, err := c.ListServiceIPv6Networks(ctx, int64(nextService.ID))
+		if err != nil {
+			return nil, err
+		}
+		services[index].IPv4Addresses = appendPrimaryIP(ipv4Addresses, services[index].IPv4Addresses)
+		services[index].IPv6Addresses = appendPrimaryIP(ipv6Addresses, services[index].IPv6Addresses)
+		services[index].IPv6Subnets = ipv6Subnets
+	}
+	return services, nil
 }
 
 func (c *Client) ListServiceTypes(ctx context.Context) ([]models.ServiceType, error) {
@@ -167,6 +185,7 @@ func (c *Client) GetService(ctx context.Context, id int64) (*models.Service, err
 		AutoProlong      bool                   `json:"autoProlong"`
 		Backups          bool                   `json:"backups"`
 		Status           string                 `json:"status"`
+		Capabilities     []string               `json:"capabilities"`
 		LocationCode     string                 `json:"locationCode"`
 		CreatedAt        string                 `json:"createdAt"`
 		ExpiresAt        string                 `json:"expiresAt"`
@@ -193,19 +212,51 @@ func (c *Client) GetService(ctx context.Context, id int64) (*models.Service, err
 		LocationCode: response.LocationCode, CreatedAt: response.CreatedAt, ExpiresAt: response.ExpiresAt,
 		Product: models.Product{ID: response.Product.ID, Name: response.Product.Name, Type: response.Product.TypeSlug, GroupID: response.Product.GroupID},
 	}
+	if ip := net.ParseIP(terraformService.IP); ip != nil {
+		if ip.To4() != nil {
+			terraformService.IPv4Addresses = []string{terraformService.IP}
+		} else {
+			terraformService.IPv6Addresses = []string{terraformService.IP}
+		}
+	}
+	if !hasIPCapability(response.Capabilities) {
+		return &terraformService, nil
+	}
 	ipv4Addresses, err := c.ListServiceIPv4Addresses(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	terraformService.IPv4Addresses = ipv4Addresses
+	terraformService.IPv4Addresses = appendPrimaryIP(ipv4Addresses, terraformService.IPv4Addresses)
 
-	ipv6Addresses, err := c.ListServiceIPv6Addresses(ctx, id)
+	ipv6Addresses, ipv6Subnets, err := c.ListServiceIPv6Networks(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	terraformService.IPv6Addresses = ipv6Addresses
+	terraformService.IPv6Addresses = appendPrimaryIP(ipv6Addresses, terraformService.IPv6Addresses)
+	terraformService.IPv6Subnets = ipv6Subnets
 
 	return &terraformService, nil
+}
+
+func hasIPCapability(capabilities []string) bool {
+	for _, capability := range capabilities {
+		if capability == "ip" {
+			return true
+		}
+	}
+	return false
+}
+
+func appendPrimaryIP(addresses, primary []string) []string {
+	if len(primary) == 0 {
+		return addresses
+	}
+	for _, address := range addresses {
+		if address == primary[0] {
+			return addresses
+		}
+	}
+	return append(addresses, primary[0])
 }
 
 func (c *Client) UpdateService(ctx context.Context, id int64, req models.ServiceUpdateRequest) error {

@@ -19,7 +19,7 @@ func TestGetServiceFetchesIPv6Addresses(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/v2/services/123":
-			fmt.Fprint(writer, `{"id":123,"name":"server","productId":42,"product":{"id":42,"name":"VPS","typeSlug":"vps","groupId":7,"prices":{"base":{"month":100}}},"ip":"192.0.2.1","paymentTerm":"month","parameters":{"os":"ubuntu_2404"},"status":"active"}`)
+			fmt.Fprint(writer, `{"id":123,"name":"server","productId":42,"product":{"id":42,"name":"VPS","typeSlug":"vps","groupId":7,"prices":{"base":{"month":100}}},"ip":"192.0.2.1","paymentTerm":"month","parameters":{"os":"ubuntu_2404"},"status":"active","capabilities":["ip"]}`)
 		case "/v2/services/123/networks/ipv4":
 			fmt.Fprint(writer, `{"total":2,"items":[{"value":"192.0.2.1"},{"value":"192.0.2.2"}]}`)
 		case "/v2/services/123/networks/ipv6":
@@ -52,7 +52,7 @@ func TestGetServiceFetchesIPv6Addresses(t *testing.T) {
 func TestGetServiceIPv6RequestFailure(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.URL.Path == "/v2/services/123" {
-			fmt.Fprint(writer, `{"id":123}`)
+			fmt.Fprint(writer, `{"id":123,"capabilities":["ip"]}`)
 			return
 		}
 		if request.URL.Path == "/v2/services/123/networks/ipv4" {
@@ -77,6 +77,72 @@ func TestGetServiceNotFound(t *testing.T) {
 	_, err := client.GetService(context.Background(), 123)
 	if !errors.Is(err, interfaces.ErrServiceNotFound) {
 		t.Fatalf("expected service not found error, got %v", err)
+	}
+}
+
+func TestGetServiceWithoutIPCapability(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		if request.URL.Path != "/v2/services/123" {
+			t.Errorf("unexpected network request: %s", request.URL.Path)
+			http.NotFound(writer, request)
+			return
+		}
+		fmt.Fprint(writer, `{"id":123,"ip":"192.0.2.1","capabilities":["rename"]}`)
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL, "test-key")
+	service, err := client.GetService(context.Background(), 123)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"192.0.2.1"}; !reflect.DeepEqual(service.IPv4Addresses, want) {
+		t.Fatalf("IPv4 addresses = %v, want %v", service.IPv4Addresses, want)
+	}
+}
+
+func TestGetServicePreservesPrimaryIPWhenNetworksEmpty(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/v2/services/123":
+			fmt.Fprint(writer, `{"id":123,"ip":"192.0.2.1","capabilities":["ip"]}`)
+		case "/v2/services/123/networks/ipv4", "/v2/services/123/networks/ipv6":
+			fmt.Fprint(writer, `{"total":0,"items":[]}`)
+		default:
+			http.NotFound(writer, request)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL, "test-key")
+	service, err := client.GetService(context.Background(), 123)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"192.0.2.1"}; !reflect.DeepEqual(service.IPv4Addresses, want) {
+		t.Fatalf("IPv4 addresses = %v, want %v", service.IPv4Addresses, want)
+	}
+}
+
+func TestGetServiceReturnsIPv6SubnetWithoutHostAddresses(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/v2/services/123":
+			fmt.Fprint(writer, `{"id":123,"ip":"192.0.2.1","capabilities":["ip"]}`)
+		case "/v2/services/123/networks/ipv4":
+			fmt.Fprint(writer, `{"total":1,"items":[{"value":"192.0.2.1"}]}`)
+		case "/v2/services/123/networks/ipv6":
+			fmt.Fprint(writer, `{"total":1,"items":[{"value":"2001:db8::/48","prefix":"48","ips":[]}]}`)
+		default:
+			http.NotFound(writer, request)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL, "test-key")
+	service, err := client.GetService(context.Background(), 123)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(service.IPv6Addresses) != 0 || !reflect.DeepEqual(service.IPv6Subnets, []string{"2001:db8::/48"}) {
+		t.Fatalf("unexpected IPv6 addresses %v or subnets %v", service.IPv6Addresses, service.IPv6Subnets)
 	}
 }
 
@@ -128,6 +194,31 @@ func TestListServicesV2Pagination(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(services) != 2 || services[0].ID != 1 || services[1].ID != 2 {
+		t.Fatalf("unexpected services: %+v", services)
+	}
+}
+
+func TestListServicesV2FetchesNetworkAddresses(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/v2/services":
+			fmt.Fprint(writer, `{"total":2,"items":[{"id":1,"ip":"192.0.2.1","capabilities":["ip"]},{"id":2,"capabilities":["rename"]}]}`)
+		case "/v2/services/1/networks/ipv4":
+			fmt.Fprint(writer, `{"items":[{"value":"192.0.2.1"},{"value":"192.0.2.2"}],"total":2}`)
+		case "/v2/services/1/networks/ipv6":
+			fmt.Fprint(writer, `{"items":[{"value":"2001:db8::/48","prefix":"48","ips":["2001:db8::1"]}],"total":1}`)
+		default:
+			t.Errorf("unexpected request: %s", request.URL.Path)
+			http.NotFound(writer, request)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL, "test-key")
+	services, err := client.ListServices(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(services) != 2 || !reflect.DeepEqual(services[0].IPv4Addresses, []string{"192.0.2.1", "192.0.2.2"}) || !reflect.DeepEqual(services[0].IPv6Addresses, []string{"2001:db8::1"}) || !reflect.DeepEqual(services[0].IPv6Subnets, []string{"2001:db8::/48"}) {
 		t.Fatalf("unexpected services: %+v", services)
 	}
 }
@@ -268,6 +359,24 @@ func TestListOSV2Pagination(t *testing.T) {
 	operatingSystems, err := client.ListOS(context.Background())
 	if err != nil || len(operatingSystems) != 51 || operatingSystems[50].ID != 51 {
 		t.Fatalf("unexpected operating systems: count=%d, error=%v", len(operatingSystems), err)
+	}
+}
+
+func TestListOSV2RejectsRepeatedPage(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		response := make([]map[string]interface{}, 0, 50)
+		for index := 1; index <= 50; index++ {
+			response = append(response, map[string]interface{}{"id": index, "slug": fmt.Sprintf("os-%d", index)})
+		}
+		if err := json.NewEncoder(writer).Encode(response); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer server.Close()
+	client, _ := NewClient(server.URL, "test-key")
+	_, err := client.ListOS(context.Background())
+	if err == nil || !strings.Contains(err.Error(), "duplicate ID") {
+		t.Fatalf("expected duplicate page error, got %v", err)
 	}
 }
 

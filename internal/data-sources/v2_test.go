@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/mrb4el/terraform-provider-aeza/internal/client"
+	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 )
 
 func TestV2CatalogDataSources(t *testing.T) {
@@ -48,5 +49,17 @@ func TestV2CatalogDataSources(t *testing.T) {
 				t.Fatalf("unexpected %s: %v", test.field, items)
 			}
 		})
+	}
+}
+
+func TestFlattenServicesIPv6Subnets(t *testing.T) {
+	data := schema.TestResourceDataRaw(t, ServicesDataSource().Schema, nil)
+	if err := flattenTerraformServices(data, []models.TerraformService{{IPv6Subnets: []string{"2001:db8::/48"}}}); err != nil {
+		t.Fatal(err)
+	}
+	services := data.Get("services").([]interface{})
+	fields := services[0].(map[string]interface{})
+	if !fields["ipv6_subnets"].(*schema.Set).Contains("2001:db8::/48") {
+		t.Fatalf("missing IPv6 subnet: %v", fields["ipv6_subnets"])
 	}
 }

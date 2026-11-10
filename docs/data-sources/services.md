@@ -35,4 +35,5 @@ output "active_services" {
 
 - `id` (String) The ID of this data source.
 - `services` (List of Object) List of services with their configurations and status.
-  Each service includes the primary `ip`, all `ipv4_addresses`, and all `ipv6_addresses` returned by Aeza.
+  Each service includes its primary `ip` in `ipv4_addresses` or `ipv6_addresses`. For services with the `ip` capability, the provider also fetches both network lists, adding two API requests per service.
+  IPv6 subnets are exposed separately in `ipv6_subnets` and do not imply that individual addresses are assigned.

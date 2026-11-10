@@ -15,6 +15,7 @@ type TerraformService struct {
 	IP            string   `json:"ip"`
 	IPv4Addresses []string `json:"ipv4_addresses,omitempty"`
 	IPv6Addresses []string `json:"ipv6_addresses,omitempty"`
+	IPv6Subnets   []string `json:"ipv6_subnets,omitempty"`
 	Price         float64  `json:"price"`
 	PaymentTerm   string   `json:"paymentTerm"`
 	AutoProlong   bool     `json:"autoProlong"`

@@ -44,8 +44,9 @@ resource "aeza_service" "web_server" {
 
 output "web_server_addresses" {
   value = {
-    ipv4 = tolist(aeza_service.web_server.ipv4_addresses)
-    ipv6 = tolist(aeza_service.web_server.ipv6_addresses)
+    ipv4         = tolist(aeza_service.web_server.ipv4_addresses)
+    ipv6         = tolist(aeza_service.web_server.ipv6_addresses)
+    ipv6_subnets = tolist(aeza_service.web_server.ipv6_subnets)
   }
 }
 ```
@@ -74,7 +75,7 @@ resource "aeza_service" "app_server" {
 
 ### Optional
 
-- `payment_term` (String) Billing period. Defaults to `month`.
+- `payment_term` (String) Billing period. Defaults to `month`. Changing it on an existing service is not supported by the v2 service update API.
 - `auto_prolong` (Boolean) Enable automatic renewal. Defaults to `true`.
 - `os` (String) Operating-system slug, such as `ubuntu_2404`.
 - `recipe` (String) Installation recipe slug.
@@ -86,8 +87,9 @@ resource "aeza_service" "app_server" {
 - `id` (String) The ID of the service.
 - `status` (String) Current status of the service.
 - `ip` (String) Primary IP address, kept for backward compatibility.
-- `ipv4_addresses` (Set of String) All IPv4 addresses assigned to the service.
-- `ipv6_addresses` (Set of String) IPv6 addresses returned in `items[].ips` by the Aeza v2 service networks API. Addresses provisioned later appear on the next refresh.
+- `ipv4_addresses` (Set of String) The primary IPv4 and IPv4 addresses returned by the v2 networks API when the service has the `ip` capability.
+- `ipv6_addresses` (Set of String) The primary IPv6 and addresses returned in `items[].ips` by the v2 networks API when the service has the `ip` capability. Addresses provisioned later appear on the next refresh.
+- `ipv6_subnets` (Set of String) IPv6 subnets returned by the v2 networks API in CIDR notation. A subnet is not an assigned host address, and `ipv6_addresses` can be empty even when a subnet is present.
 - `created_at` (String) Service creation timestamp.
 
 `product_name` and the resolved `product_id` are both retained in state, so downstream modules can use either value.

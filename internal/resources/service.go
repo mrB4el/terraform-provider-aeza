@@ -133,6 +133,12 @@ func ServiceResource() *schema.Resource {
 				Elem:        &schema.Schema{Type: schema.TypeString},
 				Description: "All IPv6 addresses assigned to the service.",
 			},
+			"ipv6_subnets": {
+				Type:        schema.TypeSet,
+				Computed:    true,
+				Elem:        &schema.Schema{Type: schema.TypeString},
+				Description: "IPv6 subnets assigned to the service, in CIDR notation.",
+			},
 			"wait_for_ip": {
 				Type:        schema.TypeBool,
 				Optional:    true,
@@ -342,6 +348,9 @@ func setServiceGetResponse(d *schema.ResourceData, service models.Service) error
 	if err := d.Set("ipv6_addresses", service.IPv6Addresses); err != nil {
 		return fmt.Errorf("error setting ipv6_addresses: %w", err)
 	}
+	if err := d.Set("ipv6_subnets", service.IPv6Subnets); err != nil {
+		return fmt.Errorf("error setting ipv6_subnets: %w", err)
+	}
 	if err := setFieldIfNotEmpty(d, "created_at", service.CreatedAt); err != nil {
 		return fmt.Errorf("error setting created_at: %w", err)
 	}
@@ -399,6 +408,10 @@ func setFieldIfNotEmpty(d *schema.ResourceData, key, value string) error {
 
 func serviceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(interfaces.ResourceClient)
+
+	if d.HasChange("payment_term") {
+		return diag.Errorf("changing payment_term on an existing service is not supported by the Aeza v2 service update API")
+	}
 
 	id, err := parseIntID(d.Id())
 	if err != nil {

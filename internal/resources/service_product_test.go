@@ -87,7 +87,7 @@ func TestServiceReadDistinguishesServiceAndNetworkNotFound(t *testing.T) {
 		t.Run(fmt.Sprintf("missing_service_%t", missingService), func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 				if !missingService && request.URL.Path == "/v2/services/123" {
-					fmt.Fprint(writer, `{"id":123}`)
+					fmt.Fprint(writer, `{"id":123,"capabilities":["ip"]}`)
 					return
 				}
 				if !missingService && request.URL.Path == "/v2/services/123/networks/ipv4" {
@@ -128,5 +128,38 @@ func TestServiceDeleteKeepsIDUntilDeletionCompletes(t *testing.T) {
 	diagnostics := serviceDelete(ctx, data, apiClient)
 	if data.Id() != "123" || !diagnostics.HasError() {
 		t.Fatalf("unfinished deletion: ID=%q diagnostics=%v", data.Id(), diagnostics)
+	}
+}
+
+func TestServiceUpdateRejectsPaymentTermChange(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		t.Errorf("unexpected API request: %s %s", request.Method, request.URL.Path)
+		http.Error(writer, "unexpected request", http.StatusInternalServerError)
+	}))
+	defer server.Close()
+	apiClient, _ := client.NewClient(server.URL, "test-key")
+	data := schema.TestResourceDataRaw(t, ServiceResource().Schema, map[string]interface{}{
+		"name": "server", "payment_term": "month",
+	})
+	data.SetId("123")
+	if err := data.Set("payment_term", "year"); err != nil {
+		t.Fatal(err)
+	}
+	diagnostics := serviceUpdate(context.Background(), data, apiClient)
+	if !diagnostics.HasError() || !strings.Contains(fmt.Sprint(diagnostics), "payment_term") {
+		t.Fatalf("expected payment term diagnostic, got %v", diagnostics)
+	}
+}
+
+func TestSetServiceGetResponseIPv6Subnets(t *testing.T) {
+	data := schema.TestResourceDataRaw(t, ServiceResource().Schema, nil)
+	if err := setServiceGetResponse(data, models.Service{IPv6Subnets: []string{"2001:db8::/48"}}); err != nil {
+		t.Fatal(err)
+	}
+	if !data.Get("ipv6_subnets").(*schema.Set).Contains("2001:db8::/48") {
+		t.Fatalf("missing IPv6 subnet: %v", data.Get("ipv6_subnets"))
+	}
+	if data.Get("ipv6_addresses").(*schema.Set).Len() != 0 {
+		t.Fatalf("subnet was treated as an address: %v", data.Get("ipv6_addresses"))
 	}
 }

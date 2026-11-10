@@ -60,6 +60,12 @@ func ServicesDataSource() *schema.Resource {
 							Elem:        &schema.Schema{Type: schema.TypeString},
 							Description: "All IPv6 addresses assigned to the service",
 						},
+						"ipv6_subnets": {
+							Type:        schema.TypeSet,
+							Computed:    true,
+							Elem:        &schema.Schema{Type: schema.TypeString},
+							Description: "IPv6 subnets assigned to the service, in CIDR notation",
+						},
 						"price_raw": {
 							Type:        schema.TypeInt,
 							Computed:    true,
@@ -139,6 +145,7 @@ func flattenTerraformServices(d *schema.ResourceData, services []models.Terrafor
 			"ip":             service.IP,
 			"ipv4_addresses": service.IPv4Addresses,
 			"ipv6_addresses": service.IPv6Addresses,
+			"ipv6_subnets":   service.IPv6Subnets,
 			"price_raw":      service.Price,
 			"price_display":  utils.FormatPrice(service.Price),
 			"payment_term":   service.PaymentTerm,

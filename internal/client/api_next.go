@@ -8,7 +8,9 @@ package client
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
+	"strings"
 
 	"github.com/mrb4el/terraform-provider-aeza/internal/models"
 	"github.com/mrb4el/terraform-provider-aeza/internal/models/next"
@@ -54,20 +56,34 @@ func (c *Client) ListServiceIPv4Addresses(ctx context.Context, serviceID int64) 
 	return addresses, nil
 }
 
-func (c *Client) ListServiceIPv6Addresses(ctx context.Context, serviceID int64) ([]string, error) {
+func (c *Client) ListServiceIPv6Networks(ctx context.Context, serviceID int64) ([]string, []string, error) {
 	var response struct {
 		Items []struct {
-			IPs []string `json:"ips"`
+			Value string   `json:"value"`
+			IPs   []string `json:"ips"`
 		} `json:"items"`
 	}
 	path := fmt.Sprintf("/v2/services/%d/networks/ipv6", serviceID)
 	if err := c.NewRequest("GET", path, nil).Do(ctx, &response); err != nil {
-		return nil, fmt.Errorf("failed to get IPv6 addresses for service %d: %w", serviceID, err)
+		return nil, nil, fmt.Errorf("failed to get IPv6 networks for service %d: %w", serviceID, err)
 	}
 
 	addresses := make([]string, 0)
+	subnets := make([]string, 0)
 	seen := make(map[string]struct{})
+	seenSubnets := make(map[string]struct{})
 	for _, network := range response.Items {
+		value := strings.TrimSpace(network.Value)
+		if value != "" {
+			ip, _, err := net.ParseCIDR(value)
+			if err != nil || ip.To4() != nil {
+				return nil, nil, fmt.Errorf("invalid IPv6 subnet in network response for service %d", serviceID)
+			}
+			if _, exists := seenSubnets[value]; !exists {
+				seenSubnets[value] = struct{}{}
+				subnets = append(subnets, value)
+			}
+		}
 		for _, address := range network.IPs {
 			if address == "" {
 				continue
@@ -78,7 +94,7 @@ func (c *Client) ListServiceIPv6Addresses(ctx context.Context, serviceID int64) 
 			}
 		}
 	}
-	return addresses, nil
+	return addresses, subnets, nil
 }
 
 func (c *Client) ListServiceGroups_V2(ctx context.Context, serviceType string) ([]next.ServiceGroup, error) {
@@ -153,6 +169,7 @@ func (c *Client) ListProducts_V2(ctx context.Context) ([]models.Product, error) 
 
 func (c *Client) ListOS_V2(ctx context.Context) ([]next.OperatingSystem, error) {
 	var operatingSystems []next.OperatingSystem
+	seenIDs := make(map[int]struct{})
 	for offset := 0; ; {
 		var response []next.OperatingSystem
 		request := c.NewRequest("GET", "/v2/services/operating-systems", nil)
@@ -160,6 +177,12 @@ func (c *Client) ListOS_V2(ctx context.Context) ([]next.OperatingSystem, error) 
 		request.AddQueryParam("limit", "50")
 		if err := request.Do(ctx, &response); err != nil {
 			return nil, err
+		}
+		for _, operatingSystem := range response {
+			if _, exists := seenIDs[operatingSystem.ID]; exists {
+				return nil, fmt.Errorf("operating system list returned duplicate ID %d at offset %d", operatingSystem.ID, offset)
+			}
+			seenIDs[operatingSystem.ID] = struct{}{}
 		}
 		operatingSystems = append(operatingSystems, response...)
 		if len(response) < 50 {
