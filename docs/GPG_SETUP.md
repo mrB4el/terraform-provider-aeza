@@ -48,7 +48,7 @@ gpg --fingerprint KEY_ID
 ## Step 3: Add GPG Keys to GitHub Secrets
 
 Go to your repository settings:
-`https://github.com/scinfra-pro/terraform-provider-aeza/settings/secrets/actions`
+`https://github.com/mrB4el/terraform-provider-aeza/settings/secrets/actions`
 
 Add these secrets:
 
@@ -64,22 +64,13 @@ Add these secrets:
    - The 40-character fingerprint without spaces
    - Example: `1234567890ABCDEF1234567890ABCDEF12345678`
 
-## Step 4: Publish Public Key to GitHub
+## Step 4: Add the Public Key to Terraform Registry
 
 ```bash
-# Export public key
-gpg --armor --export KEY_ID > scinfra-pro.gpg
-
-# Add to GitHub:
-# 1. Go to https://github.com/scinfra-pro
-# 2. Create a repository "scinfra-pro" (username repository)
-# 3. Add file scinfra-pro.gpg to root
-# 4. Commit and push
-
-# Or use GitHub's keyserver:
-# Settings → SSH and GPG keys → New GPG key
-# Paste the public key
+gpg --armor --export KEY_ID
 ```
+
+Add the exported public key under [Terraform Registry Signing Keys](https://registry.terraform.io/settings/gpg-keys) for your namespace. Adding it to GitHub is optional.
 
 ## Step 5: Publish to Keyserver (Optional but Recommended)
 
@@ -97,7 +88,7 @@ gpg --keyserver keys.openpgp.org --send-keys KEY_ID
 # Test GoReleaser locally (without publishing)
 goreleaser release --snapshot --clean
 
-# Check the dist/ directory for signed artifacts
+# Check the dist/ directory for build artifacts
 ls -la dist/
 ```
 
@@ -108,7 +99,7 @@ ls -la dist/
 git tag -a v0.1.1-test -m "Test release"
 git push origin v0.1.1-test
 
-# Check GitHub Actions: https://github.com/scinfra-pro/terraform-provider-aeza/actions
+# Check GitHub Actions: https://github.com/mrB4el/terraform-provider-aeza/actions
 # Verify the release was created and signed
 ```
 
@@ -117,8 +108,8 @@ git push origin v0.1.1-test
 Users can verify releases:
 
 ```bash
-# Download the public key
-curl -sL https://github.com/scinfra-pro.gpg | gpg --import
+# Import the public key exported by the provider maintainer
+gpg --import public-key.asc
 
 # Verify the signature
 gpg --verify terraform-provider-aeza_0.2.0_SHA256SUMS.sig \
