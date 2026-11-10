@@ -1,4 +1,4 @@
-YOUR_NAME = scinfra-pro
+YOUR_NAME = mrb4el
 BINARY_NAME=terraform-provider-aeza
 VERSION=0.1.0
 GOOS?=$(shell go env GOOS)

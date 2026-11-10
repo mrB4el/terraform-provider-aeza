@@ -21,7 +21,7 @@ This provider allows you to manage Aeza services (VPS, dedicated servers, etc.) 
 terraform {
   required_providers {
     aeza = {
-      source  = "scinfra-pro/aeza"
+      source  = "mrb4el/aeza"
       version = "~> 0.1.0"
     }
   }
@@ -36,7 +36,7 @@ provider "aeza" {
 ### Building from Source
 
 ```bash
-git clone https://github.com/scinfra-pro/terraform-provider-aeza
+git clone https://github.com/mrB4el/terraform-provider-aeza
 cd terraform-provider-aeza
 make build
 ```
@@ -129,4 +129,9 @@ This project is licensed under the Mozilla Public License 2.0 - see the [LICENSE
 ## Organization
 
 Maintained by [SCINFRA](https://github.com/scinfra-pro)
+
+## Acknowledgments
+
+- Thanks to [SCINFRA](https://github.com/scinfra-pro) for the original development.
+- Thanks to [supercakecrumb](https://github.com/supercakecrumb) for major improvements.
 

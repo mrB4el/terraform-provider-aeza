@@ -14,8 +14,8 @@ The Aeza provider allows Terraform to manage [Aeza](https://aeza.net/) cloud res
 terraform {
   required_providers {
     aeza = {
-      source  = "scinfra-pro/aeza"
-      version = "~> 0.2.0"
+      source  = "mrb4el/aeza"
+      version = "~> 0.1.0"
     }
   }
 }
