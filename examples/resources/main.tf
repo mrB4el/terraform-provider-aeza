@@ -2,7 +2,7 @@
 terraform {
   required_providers {
     aeza = {
-      source  = "scinfra-pro/aeza"
+      source  = "mrb4el/aeza"
       version = "0.1.0"
     }
   }
