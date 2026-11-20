@@ -17,13 +17,13 @@ resource "aeza_service" "server" {
 
 | Resource type | Products |
 |---|---:|
-| VPS | 111 |
+| VPS | 133 |
 | HiCPU | 15 |
-| Dedicated | 28 |
+| Dedicated | 29 |
 | Domains | 220 |
-| Other | 20 |
+| Other | 13 |
 
-## VPS (111)
+## VPS (133)
 
 | Product name | Service handler | Payment terms |
 |---|---|---|
@@ -37,6 +37,28 @@ resource "aeza_service" "server" {
 | `CLTs-3` | `vm6` | half_year, hour, month, quarter_year, year |
 | `CLTs-4` | `vm6` | half_year, hour, month, quarter_year, year |
 | `CLTs-5` | `vm6` | half_year, hour, month, quarter_year, year |
+| `Custom CLT` | `vm6` | half_year, month, quarter_year, year |
+| `Custom CLTs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom DE` | `vm6` | half_year, month, quarter_year, year |
+| `Custom DEs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom HEL` | `vm6` | half_year, month, quarter_year, year |
+| `Custom HELs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom LND` | `vm6` | half_year, month, quarter_year, year |
+| `Custom LNDs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom MSK` | `vm6` | half_year, month, quarter_year, year |
+| `Custom MSK-s` | `vm6` | half_year, month, quarter_year, year |
+| `Custom NL` | `vm6` | half_year, month, quarter_year, year |
+| `Custom NLs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom PAR` | `vm6` | half_year, month, quarter_year, year |
+| `Custom PARs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom SPB` | `vm6` | half_year, month, quarter_year, year |
+| `Custom SPBs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom SWE` | `vm6` | half_year, month, quarter_year, year |
+| `Custom SWEs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom VIE` | `vm6` | half_year, month, quarter_year, year |
+| `Custom VIEs` | `vm6` | half_year, month, quarter_year, year |
+| `Custom WAW` | `vm6` | half_year, month, quarter_year, year |
+| `Custom WAWs` | `vm6` | half_year, month, quarter_year, year |
 | `DE-1` | `vm6` | half_year, hour, month, quarter_year, year |
 | `DE-2` | `vm6` | half_year, hour, month, quarter_year, year |
 | `DE-3` | `vm6` | half_year, hour, month, quarter_year, year |
@@ -143,23 +165,23 @@ resource "aeza_service" "server" {
 
 | Product name | Service handler | Payment terms |
 |---|---|---|
-| `EFH-1` | `vm6` | half_year, hour, month, quarter_year, year |
-| `EFH-2` | `vm6` | half_year, hour, month, quarter_year, year |
-| `EFH-3` | `vm6` | half_year, hour, month, quarter_year, year |
-| `EFH-4` | `vm6` | half_year, hour, month, quarter_year, year |
-| `EFH-5` | `vm6` | half_year, hour, month, quarter_year, year |
-| `IC14-1` | `vm6` | half_year, hour, month, quarter_year, year |
-| `IC14-2` | `vm6` | half_year, hour, month, quarter_year, year |
-| `IC14-3` | `vm6` | half_year, hour, month, quarter_year, year |
-| `IC14-4` | `vm6` | half_year, hour, month, quarter_year, year |
-| `IC14-5` | `vm6` | half_year, hour, month, quarter_year, year |
+| `EFH-1` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `EFH-2` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `EFH-3` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `EFH-4` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `EFH-5` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `IC14-1` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `IC14-2` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `IC14-3` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `IC14-4` | `vm6` | half_year, hour, month, quarter_year, week, year |
+| `IC14-5` | `vm6` | half_year, hour, month, quarter_year, week, year |
 | `RX32-1` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-2` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-3` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-4` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-5` | `vm6` | half_year, hour, month, quarter_year, year |
 
-## Dedicated (28)
+## Dedicated (29)
 
 | Product name | Service handler | Payment terms |
 |---|---|---|
@@ -182,6 +204,7 @@ resource "aeza_service" "server" {
 | `AMD Ryzen 9 5950X – 10 Gbps` | `manual` | half_year, month, quarter_year, year |
 | `AMD Ryzen 9 5950X – 100 Gbps` | `manual` | half_year, month, quarter_year, year |
 | `AMD Ryzen 9 7950X` | `manual` | month, year |
+| `i9-10900k` | `manual` | month |
 | `Intel Core i5-13500` | `manual` | half_year, month, quarter_year, year |
 | `Intel Core i7-6700 ⚠ ambiguous` | `manual` | half_year, month, quarter_year, year |
 | `Intel Core i7-6700 ⚠ ambiguous` | `manual` | half_year, month, quarter_year, year |
@@ -417,21 +440,14 @@ resource "aeza_service" "server" {
 | `xyz` | `feru` | year |
 | `zone` | `feru` | year |
 
-## Other (20)
+## Other (13)
 
 | Product name | Type | Service handler | Payment terms |
 |---|---|---|---|
-| `1000GB` | `s3` | `s3` | month |
-| `100GB` | `s3` | `s3` | month |
-| `10GB` | `s3` | `s3` | month |
-| `2000GB` | `s3` | `s3` | month |
-| `250GB` | `s3` | `s3` | month |
-| `500GB` | `s3` | `s3` | month |
-| `6000GB` | `s3` | `s3` | month |
 | `Extra Large` | `vpn` | `vpn` | half_year, month, quarter_year, year |
 | `Host ⚠ ambiguous` | `soft` | `ispmgr` | month, year |
 | `Large` | `vpn` | `vpn` | half_year, month, quarter_year, year |
-| `Lite` | `soft` | `ispmgr` | month, year |
+| `Lite` | `soft` | `ispmgr` | month |
 | `Medium` | `vpn` | `vpn` | half_year, month, quarter_year, year |
 | `NAS-1` | `storage` | `vm6` | hour, month |
 | `NAS-12` | `storage` | `vm6` | half_year, hour, month, quarter_year, year |
