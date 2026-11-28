@@ -18,7 +18,7 @@ resource "aeza_service" "server" {
 | Resource type | Products |
 |---|---:|
 | VPS | 133 |
-| HiCPU | 15 |
+| HiCPU | 10 |
 | Dedicated | 29 |
 | Domains | 220 |
 | Other | 13 |
@@ -161,7 +161,7 @@ resource "aeza_service" "server" {
 | `WAWs-4` | `vm6` | half_year, hour, month, quarter_year, year |
 | `WAWs-5` | `vm6` | half_year, hour, month, quarter_year, year |
 
-## HiCPU (15)
+## HiCPU (10)
 
 | Product name | Service handler | Payment terms |
 |---|---|---|
@@ -170,11 +170,6 @@ resource "aeza_service" "server" {
 | `EFH-3` | `vm6` | half_year, hour, month, quarter_year, week, year |
 | `EFH-4` | `vm6` | half_year, hour, month, quarter_year, week, year |
 | `EFH-5` | `vm6` | half_year, hour, month, quarter_year, week, year |
-| `IC14-1` | `vm6` | half_year, hour, month, quarter_year, week, year |
-| `IC14-2` | `vm6` | half_year, hour, month, quarter_year, week, year |
-| `IC14-3` | `vm6` | half_year, hour, month, quarter_year, week, year |
-| `IC14-4` | `vm6` | half_year, hour, month, quarter_year, week, year |
-| `IC14-5` | `vm6` | half_year, hour, month, quarter_year, week, year |
 | `RX32-1` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-2` | `vm6` | half_year, hour, month, quarter_year, year |
 | `RX32-3` | `vm6` | half_year, hour, month, quarter_year, year |
